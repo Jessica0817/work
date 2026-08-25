@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作流管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #fafbfc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            color: #2c3e50;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-btn:hover {
+            color: #2c3e50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .inbox-section, .matrix-section, .notes-section, .history-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e8e8e8;
+        }
+
+        .inbox-section h2, .matrix-section h2, .notes-section h2, .schedule-section h2, .history-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .inbox-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .inbox-form input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .inbox-form input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .inbox-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .inbox-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #3498db;
+        }
+
+        .inbox-item:hover {
+            background: #f0f3f7;
+        }
+
+        .inbox-item-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .select-category {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 10px;
+            font-size: 0.8em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .quadrant {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px solid #e8e8e8;
+            min-height: 350px;
+        }
+
+        .quadrant h3 {
+            font-size: 1em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c3e50;
+        }
+
+        .priority-badge {
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 700;
+        }
+
+        .quadrant.urgent-important {
+            border-color: #e74c3c;
+        }
+
+        .quadrant.urgent-important .priority-badge {
+            background: #e74c3c;
+        }
+
+        .quadrant.important {
+            border-color: #f39c12;
+        }
+
+        .quadrant.important .priority-badge {
+            background: #f39c12;
+        }
+
+        .quadrant.urgent {
+            border-color: #3498db;
+        }
+
+        .quadrant.urgent .priority-badge {
+            background: #3498db;
+        }
+
+        .quadrant.low {
+            border-color: #95a5a6;
+        }
+
+        .quadrant.low .priority-badge {
+            background: #95a5a6;
+        }
+
+        .quadrant-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #e8e8e8;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .task-card.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .task-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .task-card-title {
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.9em;
+            word-break: break-word;
+            color: #2c3e50;
+        }
+
+        .task-card-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-check {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-check:hover {
+            background: #229954;
+        }
+
+        .task-card-details {
+            display: none;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e8e8e8;
+            font-size: 0.85em;
+        }
+
+        .task-card-details.show {
+            display: block;
+        }
+
+        .task-time {
+            font-size: 0.75em;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .task-notes-label {
+            font-size: 0.8em;
+            color: #3498db;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .task-notes {
+            background: #f8f9fa;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        .task-notes-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 40px;
+        }
+
+        .task-notes-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn-save-notes {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.75em;
+            margin-top: 6px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-save-notes:hover {
+            background: #2980b9;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        .schedule-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e8e8e8;
+            margin-bottom: 30px;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .time-block {
+            background: #f0f3f7;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .time-block h4 {
+            font-size: 1em;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .time-block p {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .time-block.focus {
+            background: #e8f4f8;
+            border-color: #3498db;
+        }
+
+        .time-block.tasks {
+            background: #fef5e7;
+            border-color: #f39c12;
+        }
+
+        .time-block.open {
+            background: #e8f8f5;
+            border-color: #16a085;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f0f3f7;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .notes-section {
+            margin-bottom: 30px;
+        }
+
+        .note-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .alert-banner {
+            background: #fadbd8;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-banner.show {
+            display: block;
+        }
+
+        .alert-banner h4 {
+            color: #c0392b;
+            margin-bottom: 8px;
+        }
+
+        .alert-banner-items {
+            list-style: none;
+            font-size: 0.9em;
+            color: #7b241c;
+        }
+
+        .alert-banner-items li {
+            padding: 4px 0;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #27ae60;
+            font-size: 0.9em;
+        }
+
+        .history-item-date {
+            font-size: 0.8em;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .history-item-text {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .history-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .history-filter input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 工作流管理系統</h1>
+            <p>快速收集 → 智慧分類 → 專注執行</p>
+        </header>
+
+        <!-- 頁籤 -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('workflow')">📊 工作流</button>
+            <button class="tab-btn" onclick="switchTab('notes')">📝 備忘錄</button>
+            <button class="tab-btn" onclick="switchTab('history')">📋 完成記錄</button>
+        </div>
+
+        <!-- 工作流頁籤 -->
+        <div id="workflow" class="tab-content active">
+            <!-- 緊急提醒 -->
+            <div class="alert-banner" id="alertBanner">
+                <h4>🔴 馬上要做的事！</h4>
+                <ul class="alert-banner-items" id="alertItems"></ul>
+            </div>
+
+            <div class="main-grid">
+                <!-- 收件箱 -->
+                <div class="inbox-section">
+                    <h2>📮 收件箱</h2>
+                    <div class="inbox-form">
+                        <input
+                            type="text"
+                            id="newTaskInput"
+                            placeholder="快速寫下臨時工作..."
+                            autocomplete="off"
+                        >
+                        <button class="btn btn-primary" onclick="addTask()">新增</button>
+                    </div>
+                    <div class="inbox-list" id="inboxList">
+                        <div class="empty-state">還沒有待分類工作</div>
+                    </div>
+                </div>
+
+                <!-- 優先級矩陣 -->
+                <div class="matrix-section">
+                    <h2>⚡ 優先級矩陣</h2>
+                    <div class="matrix">
+                        <div class="quadrant urgent-important">
+                            <h3>
+                                <span class="priority-badge">⭐⭐⭐⭐⭐</span>
+                                馬上做
+                            </h3>
+                            <small style="color:#666;display:block;margin-bottom:10px;">緊急 & 重要</small>
+                            <div id="q1" class="quadrant-tasks"></div>
+                        </div>
+
+                        <div class="quadrant important">
+                            <h3>
+                                <span class="priority-badge">⭐⭐⭐⭐</span>
+                                排期做
+                            </h3>
+                            <small style="color:#666;display:block;margin-bottom:10px;">重要 & 非緊急</small>
+                            <div id="q2" class="quadrant-tasks"></div>
+                        </div>
+
+                        <div class="quadrant urgent">
+                            <h3>
+                                <span class="priority-badge">⭐⭐</span>
+                                快速解決
+                            </h3>
+                            <small style="color:#666;display:block;margin-bottom:10px;">緊急 & 非重要</small>
+                            <div id="q3" class="quadrant-tasks"></div>
+                        </div>
+
+                        <div class="quadrant low">
+                            <h3>
+                                <span class="priority-badge">❌</span>
+                                檔案/委派
+                            </h3>
+                            <small style="color:#666;display:block;margin-bottom:10px;">非緊急 & 非重要</small>
+                            <div id="q4" class="quadrant-tasks"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 時間管理 -->
+            <div class="schedule-section">
+                <h2>⏰ 每日時間規劃</h2>
+                <div class="schedule-grid">
+                    <div class="time-block focus">
+                        <h4>🔥 專注時段</h4>
+                        <p>10:30-12:00</p>
+                        <p style="font-size:0.8em;">只做重要專案</p>
+                    </div>
+                    <div class="time-block">
+                        <h4>🍽️ 午餐/休息</h4>
+                        <p>12:00-13:00</p>
+                        <p style="font-size:0.8em;">充電時間</p>
+                    </div>
+                    <div class="time-block tasks">
+                        <h4>📋 處理時段</h4>
+                        <p>13:00-14:00</p>
+                        <p style="font-size:0.8em;">回覆郵件</p>
+                    </div>
+                    <div class="time-block focus">
+                        <h4>🔥 專注時段</h4>
+                        <p>14:00-17:30</p>
+                        <p style="font-size:0.8em;">做重要專案</p>
+                    </div>
+                    <div class="time-block open">
+                        <h4>💬 開放時段</h4>
+                        <p>17:30-19:00</p>
+                        <p style="font-size:0.8em;">總監需求</p>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="statInbox">0</div>
+                        <div class="stat-label">未分類</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statUrgent">0</div>
+                        <div class="stat-label">馬上做</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statCompleted">0</div>
+                        <div class="stat-label">今日完成</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 備忘錄頁籤 -->
+        <div id="notes" class="tab-content">
+            <div class="notes-section">
+                <h2>📝 備忘錄</h2>
+                <textarea
+                    id="notesArea"
+                    class="note-input"
+                    placeholder="記錄妳的想法、靈感或重要提醒..."
+                ></textarea>
+                <button class="btn btn-primary" style="margin-top:10px;" onclick="saveNotes()">保存備忘錄</button>
+                <div style="margin-top:10px; font-size:0.85em; color:#999;" id="notesSaveTime"></div>
+            </div>
+        </div>
+
+        <!-- 完成記錄頁籤 -->
+        <div id="history" class="tab-content">
+            <div class="history-section">
+                <h2>📋 完成記錄</h2>
+                <div class="history-filter">
+                    <input
+                        type="date"
+                        id="historyDate"
+                        onchange="filterHistory()"
+                    >
+                    <button class="btn" style="background:#f0f3f7;color:#2c3e50;border:1px solid #ddd;" onclick="clearHistoryFilter()">清除篩選</button>
+                </div>
+                <div id="historyList">
+                    <div class="empty-state">還沒有完成記錄</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const QUADRANTS = {
+            'urgent-important': 'q1',
+            'important': 'q2',
+            'urgent': 'q3',
+            'low': 'q4'
+        };
+
+        let tasks = {
+            inbox: [],
+            'urgent-important': [],
+            'important': [],
+            'urgent': [],
+            'low': []
+        };
+
+        let history = [];
+        let notes = '';
+
+        // 加載數據
+        function loadData() {
+            const saved = localStorage.getItem('workflowTasks');
+            if (saved) tasks = JSON.parse(saved);
+
+            const savedHistory = localStorage.getItem('workflowHistory');
+            if (savedHistory) history = JSON.parse(savedHistory);
+
+            const savedNotes = localStorage.getItem('workflowNotes');
+            if (savedNotes) {
+                notes = savedNotes;
+                document.getElementById('notesArea').value = notes;
+                updateNotesSaveTime();
+            }
+
+            renderAll();
+        }
+
+        // 保存數據
+        function saveData() {
+            localStorage.setItem('workflowTasks', JSON.stringify(tasks));
+            localStorage.setItem('workflowHistory', JSON.stringify(history));
+        }
+
+        // 新增工作
+        function addTask() {
+            const input = document.getElementById('newTaskInput');
+            const text = input.value.trim();
+
+            if (!text) {
+                alert('請輸入工作內容');
+                return;
+            }
+
+            const task = {
+                id: Date.now(),
+                text: text,
+                notes: '',
+                created: new Date().toLocaleString('zh-Hant-TW'),
+                completed: false
+            };
+
+            tasks.inbox.push(task);
+            input.value = '';
+            saveData();
+            renderAll();
+        }
+
+        // 移動任務
+        function moveToQuadrant(taskId, fromCategory, toCategory) {
+            const task = tasks[fromCategory].find(t => t.id === taskId);
+            if (task) {
+                tasks[fromCategory] = tasks[fromCategory].filter(t => t.id !== taskId);
+                tasks[toCategory].push(task);
+                saveData();
+                renderAll();
+            }
+        }
+
+        // 標記完成
+        function completeTask(taskId, category) {
+            const task = tasks[category].find(t => t.id === taskId);
+            if (task) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('zh-Hant-TW');
+                const timeStr = now.toLocaleTimeString('zh-Hant-TW');
+
+                history.push({
+                    id: Date.now(),
+                    text: task.text,
+                    category: category,
+                    completedDate: dateStr,
+                    completedTime: timeStr,
+                    fullDate: now.toISOString()
+                });
+
+                tasks[category] = tasks[category].filter(t => t.id !== taskId);
+                saveData();
+                renderAll();
+            }
+        }
+
+        // 刪除工作
+        function deleteTask(taskId, category) {
+            tasks[category] = tasks[category].filter(t => t.id !== taskId);
+            saveData();
+            renderAll();
+        }
+
+        // 切換頁籤
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 保存備忘錄
+        function saveNotes() {
+            notes = document.getElementById('notesArea').value;
+            localStorage.setItem('workflowNotes', notes);
+            updateNotesSaveTime();
+            alert('備忘錄已保存！');
+        }
+
+        // 更新保存時間
+        function updateNotesSaveTime() {
+            const now = new Date().toLocaleTimeString('zh-Hant-TW');
+            document.getElementById('notesSaveTime').textContent = `最後保存時間：${now}`;
+        }
+
+        // 篩選歷史記錄
+        function filterHistory() {
+            renderAll();
+        }
+
+        // 清除篩選
+        function clearHistoryFilter() {
+            document.getElementById('historyDate').value = '';
+            renderAll();
+        }
+
+        // 切換卡片詳情
+        function toggleCardDetails(taskId) {
+            const details = document.getElementById(`details-${taskId}`);
+            if (details) details.classList.toggle('show');
+        }
+
+        // 保存備注
+        function saveTaskNotes(taskId, category) {
+            const textarea = document.getElementById(`notes-input-${taskId}`);
+            const task = tasks[category].find(t => t.id === taskId);
+            if (task && textarea) {
+                task.notes = textarea.value;
+                saveData();
+                renderAll();
+            }
+        }
+
+        // 編輯備注
+        function editTaskNotes(taskId, category) {
+            const display = document.getElementById(`notes-display-${taskId}`);
+            const form = document.getElementById(`notes-form-${taskId}`);
+            if (display) display.style.display = 'none';
+            if (form) form.style.display = 'block';
+        }
+
+        // 渲染收件箱
+        function renderInbox() {
+            const container = document.getElementById('inboxList');
+
+            if (tasks.inbox.length === 0) {
+                container.innerHTML = '<div class="empty-state">還沒有待分類工作</div>';
+                return;
+            }
+
+            container.innerHTML = tasks.inbox.map(task => `
+                <div class="inbox-item">
+                    <span class="inbox-item-text">${task.text}</span>
+                    <div style="display:flex;gap:5px;">
+                        <select class="select-category" onchange="moveToQuadrant(${task.id}, 'inbox', this.value)">
+                            <option value="">選擇...</option>
+                            <option value="urgent-important">🔴 馬上做</option>
+                            <option value="important">🟠 排期做</option>
+                            <option value="urgent">🔵 快速解決</option>
+                            <option value="low">⚪ 檔案/委派</option>
+                        </select>
+                        <button class="btn-delete" onclick="deleteTask(${task.id}, 'inbox')">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染象限
+        function renderQuadrants() {
+            const colors = {
+                'urgent-important': '#e74c3c',
+                'important': '#f39c12',
+                'urgent': '#3498db',
+                'low': '#95a5a6'
+            };
+
+            Object.entries(QUADRANTS).forEach(([category, elementId]) => {
+                const container = document.getElementById(elementId);
+
+                if (tasks[category].length === 0) {
+                    container.innerHTML = '<div class="empty-state">暫無工作</div>';
+                    return;
+                }
+
+                container.innerHTML = tasks[category].map(task => `
+                    <div class="task-card" style="border-left-color:${colors[category]};">
+                        <div class="task-card-header">
+                            <span class="task-card-title" onclick="toggleCardDetails(${task.id})">${task.text}</span>
+                            <div class="task-card-actions">
+                                <button class="btn-check" onclick="completeTask(${task.id}, '${category}')">✓</button>
+                                <button class="btn-delete" onclick="deleteTask(${task.id}, '${category}')">✕</button>
+                            </div>
+                        </div>
+                        <div id="details-${task.id}" class="task-card-details">
+                            <div class="task-time">建立：${task.created}</div>
+                            <div class="task-notes-label">📝 備注</div>
+                            <div id="notes-display-${task.id}">
+                                <div class="task-notes">${task.notes || '<em>無</em>'}</div>
+                                <button class="btn-save-notes" style="background:#3498db;" onclick="editTaskNotes(${task.id}, '${category}')">編輯</button>
+                            </div>
+                            <div id="notes-form-${task.id}" style="display:none;">
+                                <textarea id="notes-input-${task.id}" class="task-notes-input">${task.notes}</textarea>
+                                <button class="btn-save-notes" onclick="saveTaskNotes(${task.id}, '${category}')">保存</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // 更新統計
+        function updateStats() {
+            document.getElementById('statInbox').textContent = tasks.inbox.length;
+            document.getElementById('statUrgent').textContent = tasks['urgent-important'].length;
+            document.getElementById('statCompleted').textContent = history.length;
+        }
+
+        // 渲染歷史記錄
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            const filterDate = document.getElementById('historyDate').value;
+
+            let filtered = history;
+            if (filterDate) {
+                filtered = history.filter(item => {
+                    const itemDate = new Date(item.fullDate).toISOString().split('T')[0];
+                    return itemDate === filterDate;
+                });
+            }
+
+            filtered = filtered.sort((a, b) => new Date(b.fullDate) - new Date(a.fullDate));
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">沒有完成記錄</div>';
+                return;
+            }
+
+            const categoryNames = {
+                'urgent-important': '🔴 馬上做',
+                'important': '🟠 排期做',
+                'urgent': '🔵 快速解決',
+                'low': '⚪ 檔案/委派'
+            };
+
+            container.innerHTML = filtered.map(item => `
+                <div class="history-item">
+                    <div class="history-item-date">
+                        ${item.completedDate} ${item.completedTime}
+                    </div>
+                    <div class="history-item-text">${item.text}</div>
+                    <div style="font-size:0.8em;color:#999;margin-top:4px;">${categoryNames[item.category] || item.category}</div>
+                </div>
+            `).join('');
+        }
+
+        // 更新提醒
+        function updateAlerts() {
+            const urgent = tasks['urgent-important'];
+            const banner = document.getElementById('alertBanner');
+            const itemsList = document.getElementById('alertItems');
+
+            if (urgent.length === 0) {
+                banner.classList.remove('show');
+            } else {
+                banner.classList.add('show');
+                itemsList.innerHTML = urgent.map(task => `<li>• ${task.text}</li>`).join('');
+            }
+        }
+
+        // 全部渲染
+        function renderAll() {
+            renderInbox();
+            renderQuadrants();
+            renderHistory();
+            updateStats();
+            updateAlerts();
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            document.getElementById('newTaskInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
+        });
+    </script>
+</body>
+</html>
